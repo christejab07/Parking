@@ -1,5 +1,6 @@
-// controllers/ticketController.js
-const { Ticket, Booking, Vehicle } = require('../models');
+const { Ticket, Vehicle } = require('../models');
+
+const validateId = (id) => /^\d+$/.test(id);
 
 const getTickets = async (req, res) => {
   try {
@@ -13,13 +14,17 @@ const getTickets = async (req, res) => {
     });
     res.json(tickets);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(400).json({ error: error.message });
   }
 };
 
 const payTicket = async (req, res) => {
   try {
+    if (!validateId(req.params.id)) {
+      return res.status(400).json({ error: 'Ticket ID must be a positive integer' });
+    }
+
     const ticket = await Ticket.findByPk(req.params.id, {
       include: [{
         model: Vehicle,
@@ -28,14 +33,14 @@ const payTicket = async (req, res) => {
     });
 
     if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
+      return res.status(404).json({ error: 'Ticket not found or not owned by user' });
     }
 
     ticket.status = 'paid';
     await ticket.save();
     res.json(ticket);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(400).json({ error: error.message });
   }
 };
